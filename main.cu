@@ -4,7 +4,28 @@
 #define N 1024
 
 __global__ void reduce_sum(float* input, float* output) {
-   // TODO: Implement this
+    // Allocate shared memory dynamically
+    extern __shared__ float sdata[];
+
+    // Thread
+    unsigned int tid = threadIdx.x;
+
+    // Load input into shared memory
+    sdata[tid] = input[tid];
+    __syncthreads();
+
+    // Do reduction in shared memory
+    // Halve stride each iteration
+    for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            sdata[tid] += sdata[tid + s];
+        }
+        __syncthreads();
+    }
+
+    if (tid == 0) {
+        *output = sdata[0];
+    }
 }
 
 int main() {
